@@ -1,57 +1,38 @@
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
-
+import 'package:clima/services/location.dart';
+import 'package:http/http.dart' as http ;
+import 'dart:convert';
 class LoadingScreen extends StatefulWidget {
   @override
   _LoadingScreenState createState() => _LoadingScreenState();
 }
 
-
 class _LoadingScreenState extends State<LoadingScreen> {
 
 
-  Future<Position> _determinePosition() async {
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    // Test if location services are enabled.
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      return Future.error('Location services are disabled.');
-    }
-
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        return Future.error('Location permissions are denied');
-      }
-    }
-
-    if (permission == LocationPermission.deniedForever) {
-      // Permissions are denied forever, handle appropriately.
-      return Future.error(
-          'Location permissions are permanently denied, we cannot request permissions.');
-    }
-
-
-    return await Geolocator.getCurrentPosition();
+  void getLocation()async {
+    Location location = Location();
+    await location.getCurrentLocation();
   }
-
+  void initState(){
+    super.initState();
+    getLocation();
+  }
+  void getData() async{
+    http.Response response = await http.get(Uri.parse('https://api.openweathermap.org/data/2.5/weather?lat=35&lon=139&appid=a071362a38a997c096c8a62a64339fdc'));
+    if (response.statusCode==200){
+      String Data = response.body;
+      var longitude = jsonDecode(Data)["main"]["temp"];
+      var weatherData = jsonDecode(Data)["weather"][0]["id"];
+      var namee= jsonDecode(Data)['name'];
+      print(weatherData);
+    }else{
+      print(response.statusCode);
+    }
+  }
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: ElevatedButton(
-          onPressed: () async {
-            //Get the current location
-            Position position = await _determinePosition();
-            print(position.latitude);
-            print(position.longitude);
-          },
-          child: Text('  Location'),
-        ),
-      ),
-    );
+    getData();
+    return Scaffold();
   }
 }
